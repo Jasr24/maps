@@ -1,5 +1,5 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { PlacesApiClient } from '../api';
 import { PlacesResponse, Feature } from '../interfaces/places';
 
 @Injectable({
@@ -16,7 +16,7 @@ export class PlacesService {
     return !!this.userLocation;   //Mira que pusimos la doble negacion, debido a que arriba no lo inicializamos, la primer negacion para saber si no tiene ningun valor y la segunda para negar el negado -> en otras palabras aqui obtendreos si tiene informacion(valor)
   }
 
-  constructor(private http: HttpClient) { 
+  constructor(private placesApi: PlacesApiClient) { 
     this.getUserLocation(); //Tan pronto alguien use este servicio se llama este metodo.
   }
 
@@ -43,9 +43,15 @@ export class PlacesService {
 
     //Primero evaluamos si el string es vacio
 
+    if (!this.userLocation) throw Error('No hay UserLocacion en PlacesService.ts')
+
     this.isLoadingPlaces = true;
 
-    this.http.get<PlacesResponse>(`https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?limit=6&proximity=-75.48931895257327%2C3.7290962971833466&language=es&access_token=pk.eyJ1IjoiamFzcjI0IiwiYSI6ImNsY3MxbWJ4dzBsMHYzb3BoM3VxbDZuM2oifQ.xfBoK-Och1U9M7rWkw_bSg`)
+    this.placesApi.get<PlacesResponse>(`/${query}.json`, {
+      params: {
+        proximity: this.userLocation.join(',')
+      }
+    })
         .subscribe(res => {
           console.log(res.features)
           this.isLoadingPlaces = false;
