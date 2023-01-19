@@ -1,6 +1,6 @@
 import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
-import {Map} from 'mapbox-gl';
-import { PlacesService } from '../../services';
+import {Map, Popup, Marker} from 'mapbox-gl';
+import { MapService, PlacesService } from '../../services';
 
 @Component({
   selector: 'app-map-view',
@@ -12,8 +12,11 @@ export class MapViewComponent implements AfterViewInit{
   @ViewChild('mapDiv')
   mapDivElement!: ElementRef;
 
-  constructor(private placesService: PlacesService) {
+  constructor(private placesService: PlacesService,
+              private mapService: MapService) {
+
     console.log('Localizacion del usuario: ', this.placesService.userLocation);
+
   }
   
   ngAfterViewInit(): void {
@@ -28,6 +31,19 @@ export class MapViewComponent implements AfterViewInit{
       center: this.placesService.userLocation, //Localizacion que mostrara al inicio
       zoom: 14, // starting zoom
     });
+
+    const popup = new Popup()
+      .setHTML(`
+        <h6>Aquí estoy</h6>
+        <spam>Estoy en este lugar del mundo</spam>
+      `);
+
+    new Marker({color: 'red'})
+      .setLngLat(this.placesService.userLocation) //Aqui aparesera el marcador
+      .setPopup(popup)
+      .addTo(map) //Aqui lo enlazamos con el mapa
+
+    this.mapService.setMap(map); //Con esto inicializamos el mapa en el servicio y ya podriamos usar el servicio de manera global
   }
 
 }
