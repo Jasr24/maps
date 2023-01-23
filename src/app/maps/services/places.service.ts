@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { PlacesApiClient } from '../api';
 import { PlacesResponse, Feature } from '../interfaces/places';
+import { MapService } from './map.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,8 @@ export class PlacesService {
     return !!this.userLocation;   //Mira que pusimos la doble negacion, debido a que arriba no lo inicializamos, la primer negacion para saber si no tiene ningun valor y la segunda para negar el negado -> en otras palabras aqui obtendreos si tiene informacion(valor)
   }
 
-  constructor(private placesApi: PlacesApiClient) { 
+  constructor(private placesApi: PlacesApiClient,
+              private mapService: MapService) { 
     this.getUserLocation(); //Tan pronto alguien use este servicio se llama este metodo.
   }
 
@@ -42,6 +44,11 @@ export class PlacesService {
   getPlacesByQuery (query: string = "") {
 
     //Primero evaluamos si el string es vacio
+    if(query.length === 0) {
+      this.isLoadingPlaces = false;
+      this.places = [];
+      return;
+    }
 
     if (!this.userLocation) throw Error('No hay UserLocacion en PlacesService.ts')
 
@@ -53,9 +60,11 @@ export class PlacesService {
       }
     })
         .subscribe(res => {
-          console.log(res.features)
+          //console.log(res.features)
           this.isLoadingPlaces = false;
           this.places = res.features;
+
+          this.mapService.createMarkersFromPlaces(this.places, this.userLocation!); //añadimos los marcadores de los lugares buscados
         });
 
   }
