@@ -30,4 +30,15 @@ export class SearchResultsComponent {
     const [lng, lat] = place.center;
     this.mapService.flyTo([lng, lat])
   }
+
+  gerDirections(place: Feature){
+
+    if(!this.placesService.userLocation) throw Error ('No hay userLocation')
+    this.placesService.deletePlaces();
+
+    const start = this.placesService.userLocation;
+    const end = place.center as [number, number]; //as para que lo trate como ...
+
+    this.mapService.getRouteBetweenPoints(start, end)
+  }
 }

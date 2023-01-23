@@ -12,6 +12,7 @@
         <h6>{{place.text_es}}</h6>
         <p>{{place.place_name}}</p>
         <button class="btn btn-sm"
+                (click)="gerDirections(place)"
                 [ngClass]="(place.id === selecteId) ? 'btn-outline-light':'btn-outline-primary'" >
             Direcciones
         </button>

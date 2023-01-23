@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
-import { LngLatBounds, LngLatLike, Map, Marker, Popup } from 'mapbox-gl';
+import { AnySourceData, LngLatBounds, LngLatLike, Map, Marker, Popup } from 'mapbox-gl';
+import { DirectionsApiClient } from '../api';
 import { Feature } from '../interfaces/places';
+import { DirectionResponse, Route } from '../interfaces/direction';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +24,7 @@ export class MapService {
   }
   //////////////////
 
+  constructor (private directionsApi: DirectionsApiClient) {}
 
   //Este metodo es para moverse de un lugar a otro
   flyTo (coords: LngLatLike){
@@ -70,6 +73,70 @@ export class MapService {
     bounce.extend(userLocation);
     this.map.fitBounds(bounce, {
       padding: 200
+    });
+  }
+
+  getRouteBetweenPoints(start: [number,number], end: [number,number]) {
+    this.directionsApi.get<DirectionResponse>(`/${start.join(',')};${end.join(',')}`)
+      .subscribe(resp => this.draPolyLine(resp.routes[0]));
+  }
+
+  private draPolyLine(route: Route){
+    console.log({kms: route.distance/1000, duration: route.duration/60});
+
+    if(!this.map) throw Error ('Mapa no inicializado');
+
+    const coords = route.geometry.coordinates;
+
+    const bounds = new LngLatBounds();
+    coords.forEach(([lng, lat]) => {
+      bounds.extend([lng,lat]);
+    });
+
+    this.map?.fitBounds(bounds, {
+      padding: 200
+    });
+
+
+    //Linea el PolyLine, trazar la linea de los dos puntos
+    const sourceDate: AnySourceData = {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: coords
+            }
+          }
+        ]
+      }
+    }
+
+    //Todo: Limpirar ruta previa
+    if (this.map.getLayer('RouteString')){
+      this.map.removeLayer('RouteString');
+      this.map.removeSource('RouteString');
+    }
+
+
+
+    this.map.addSource('RouteString', sourceDate);
+    this.map.addLayer({
+      id:'RouteString',
+      type: 'line',
+      source: 'RouteString',
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round'
+      },
+      paint: {
+        'line-color': 'black', //El color de la linea
+        'line-width': 3
+      }
     });
   }
 }
